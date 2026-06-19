@@ -52,7 +52,7 @@ class HungarianMatcherCrowd(nn.Module):
 
             cost_class = -src_prob[:, None].expand(q, m)
             cost_point = torch.cdist(src_points, tgt_points, p=2)
-            point_weight = torch.clamp(self.k / tgt_mean, min=self.alpha_min, max=0.05)[None, :]
+            point_weight = torch.clamp(self.k / tgt_mean, min=self.alpha_min)[None, :]
             cost = self.cost_class * cost_class + self.cost_point * (cost_point * point_weight)
 
             row_ind, col_ind = linear_sum_assignment(cost.detach().cpu().numpy())

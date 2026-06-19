@@ -19,7 +19,12 @@ class LitCrowdModel(L.LightningModule):
         backbone = build_backbone(cfg.model.backbone)
         self.model = P2PNet(backbone, row=cfg.model.row, line=cfg.model.line)
         matcher = build_matcher_crowd(cfg.matcher)
-        self.criterion = CrowdCriterion(matcher=matcher, point_loss_coef=cfg.model.point_loss_coef)
+        self.criterion = CrowdCriterion(
+            matcher=matcher,
+            point_loss_coef=cfg.model.point_loss_coef,
+            cls_pos_weight=cfg.model.get('cls_pos_weight', 1.0),
+            cls_neg_weight=cfg.model.get('cls_neg_weight', 0.5),
+        )
         self.best_mae = float('inf')
         self.best_mse = float('inf')
         self.val_abs_err = {t: [] for t in THRESHOLDS}

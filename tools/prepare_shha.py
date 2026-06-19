@@ -116,6 +116,19 @@ def parse_shha_mat(
     return points, mean_mnn, extra
 
 
+def resolve_gt_dir(split_dir: Path) -> Path:
+    candidates = [
+        split_dir / "ground_truth",
+        split_dir / "ground-truth",
+        split_dir / "gt",
+    ]
+    for path in candidates:
+        if path.exists():
+            return path
+    expected = ", ".join(str(path) for path in candidates)
+    raise FileNotFoundError(f"SHHA ground-truth directory not found. Expected one of: {expected}")
+
+
 def materialize_path(src: Path, dst: Path, mode: str, overwrite: bool) -> None:
     dst.parent.mkdir(parents=True, exist_ok=True)
     if dst.exists() or dst.is_symlink():
@@ -153,12 +166,12 @@ def discover_shha_samples(
 
     for source_split, unified_split in SPLIT_MAP.items():
         img_dir = source_dir / source_split / "images"
-        gt_dir = source_dir / source_split / "ground-truth"
         refine_dir = source_dir / source_split / "refine_gt"
         density_dir = source_dir / source_split / "density"
 
         if not img_dir.exists():
             raise FileNotFoundError(f"SHHA image directory not found: {img_dir}")
+        gt_dir = resolve_gt_dir(source_dir / source_split)
 
         split_ids: List[str] = []
         for image_path in sorted(img_dir.iterdir()):
@@ -173,6 +186,8 @@ def discover_shha_samples(
             materialize_path(image_path, images_dir / image_dst_name, image_mode, overwrite)
 
             gt_path = gt_dir / f"GT_{stem}.mat"
+            if not gt_path.exists():
+                raise FileNotFoundError(f"SHHA annotation file not found: {gt_path}")
             refine_path = refine_dir / f"GT_{stem}.mat"
             density_path = density_dir / f"{stem}.npy"
             ann_path = ann_dir / f"{sample_id}.npz"

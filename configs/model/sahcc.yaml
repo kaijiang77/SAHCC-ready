@@ -8,3 +8,5 @@ decoder_out_channels: 256
 anchor_pyramid_level: 3
 offset_scale: 100.0
 point_loss_coef: 0.0002
+cls_pos_weight: 1.0
+cls_neg_weight: 0.5

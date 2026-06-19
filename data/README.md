@@ -8,11 +8,13 @@ Place ShanghaiTech Part A here before preprocessing:
 data/ShanghaiTech/part_A/
   train_data/
     images/
-    ground-truth/
+    ground_truth/
   test_data/
     images/
-    ground-truth/
+    ground_truth/
 ```
+
+The preparation script also accepts `ground-truth/` and `gt/` as annotation directory names.
 
 Build the project dataset layout with:
 

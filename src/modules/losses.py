@@ -12,10 +12,20 @@ def _world_size() -> int:
 
 
 class CrowdCriterion(nn.Module):
-    def __init__(self, matcher: nn.Module, point_loss_coef: float):
+    def __init__(
+        self,
+        matcher: nn.Module,
+        point_loss_coef: float,
+        cls_pos_weight: float = 1.0,
+        cls_neg_weight: float = 0.5,
+    ):
         super().__init__()
+        if cls_pos_weight < 0 or cls_neg_weight < 0:
+            raise ValueError("Classification sample weights must be non-negative")
         self.matcher = matcher
         self.weight_dict = {"loss_ce": 1.0, "loss_points": float(point_loss_coef)}
+        self.cls_pos_weight = float(cls_pos_weight)
+        self.cls_neg_weight = float(cls_neg_weight)
 
     @staticmethod
     def _src_perm_idx(indices):
@@ -39,7 +49,8 @@ class CrowdCriterion(nn.Module):
         idx = self._src_perm_idx(indices)
         target_fg = torch.zeros((b, n), dtype=torch.float32, device=logits.device)
         target_fg[idx] = 1.0
-        sample_w = torch.full_like(target_fg, 0.5) + 0.5 * target_fg
+        sample_w = torch.full_like(target_fg, self.cls_neg_weight)
+        sample_w = sample_w + (self.cls_pos_weight - self.cls_neg_weight) * target_fg
         loss_ce = F.binary_cross_entropy_with_logits(logits, target_fg, weight=sample_w, reduction="mean")
 
         total_matches = sum(len(src) for src, _ in indices)
