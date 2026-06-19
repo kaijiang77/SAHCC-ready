@@ -36,6 +36,23 @@ pip install lightning==2.6.1 hydra-core==1.3.2 omegaconf==2.3.0 tensorboard==2.2
 pip install numpy==1.26.4 scipy==1.16.2 pillow==11.3.0 opencv-python==4.11.0.86
 ```
 
+## Pretrained Backbone
+
+The model requires the ImageNet pretrained VGG16-BN backbone weights. Download the official PyTorch weight file and save it under `pretrained/` with the filename expected by this project:
+
+```bash
+curl -L -o pretrained/vgg16_bn-6c64b313.pt \
+  https://download.pytorch.org/models/vgg16_bn-6c64b313.pth
+```
+
+The training code loads this file from:
+
+```text
+pretrained/vgg16_bn-6c64b313.pt
+```
+
+Do not place this file under `weights/`; `weights/` is reserved for training checkpoints and other runtime outputs. The `pretrained/` directory is ignored by Git except for its README.
+
 ## Prepare SHHA
 
 Download ShanghaiTech Part A and place it at:

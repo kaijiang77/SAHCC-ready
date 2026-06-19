@@ -4,6 +4,10 @@
 !/data/README.md
 /weights/
 
+/pretrained/*
+!/pretrained/
+!/pretrained/README.md
+
 # Keep only public SHHA data-processing tools.
 /tools/*
 !/tools/

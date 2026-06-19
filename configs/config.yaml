@@ -1,6 +1,6 @@
 defaults:
   - model: sahcc
-  - matcher: matcher
+  - matcher: sah
   - data: shha
   - trainer: default
   - optimizer: adamw

@@ -1,9 +1,11 @@
+from pathlib import Path
+
 import torch
 import torch.nn as nn
 
 
 MODEL_PATHS = {
-    "vgg16_bn": "weights/pretrained/vgg16_bn-6c64b313.pth",
+    "vgg16_bn": Path("pretrained/vgg16_bn-6c64b313.pt"),
 }
 
 
@@ -62,6 +64,12 @@ CFGS = {
 def vgg16_bn(pretrained=True):
     model = VGG(make_layers(CFGS["D"], batch_norm=True), init_weights=not pretrained)
     if pretrained:
-        state_dict = torch.load(MODEL_PATHS["vgg16_bn"], map_location="cpu")
+        weight_path = MODEL_PATHS["vgg16_bn"]
+        if not weight_path.exists():
+            raise FileNotFoundError(
+                f"Missing VGG16-BN pretrained weights: {weight_path}. "
+                "Download it with the command shown in README.md."
+            )
+        state_dict = torch.load(weight_path, map_location="cpu")
         model.load_state_dict(state_dict)
     return model

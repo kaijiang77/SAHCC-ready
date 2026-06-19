@@ -2,8 +2,8 @@
 set -euo pipefail
 
 DATA_CFG="${DATA_CFG:-shha}"
-EXP_CFG="${EXP_CFG:-shha_baseline}"
-GPU_IDS="${GPU_IDS:-1}"
+EXP_CFG="${EXP_CFG:-shha_sah}"
+GPU_IDS="${GPU_IDS:-0}"
 TRAINER_DEVICES="${TRAINER_DEVICES:-}"
 
 if [[ $# -gt 0 && "$1" != *=* && "$1" != +* && "$1" != -* ]]; then
