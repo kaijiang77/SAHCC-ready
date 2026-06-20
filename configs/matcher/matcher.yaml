@@ -1,4 +1,4 @@
 matcher_impl: matcher
 set_cost_class: 1.0
 set_cost_point: 0.05
-matcher_point_source: anchor_points
+matcher_point_source: pred_points
