@@ -372,7 +372,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--mean-k",
-        default=3,
+        default=2,
         type=int,
         help="Nearest-neighbor count used when computing missing mean_mnn.",
     )
