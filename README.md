@@ -19,15 +19,15 @@ Main results on crowd counting (MAE/RMSE). The table below includes the point-ba
 
 SHHA training log (MAE/RMSE: 46.59/75.49): [assets/logs/train.log](assets/logs/train.log)
 
-SHHA checkpoint (MAE/RMSE: 46.59/75.49): [GitHub Release](https://github.com/kaijiang77/SAHCC/releases)
+SHHA checkpoint (MAE/RMSE: 46.59/75.49): [GitHub Release](https://github.com/kaijiang77/SAHCC-ready/releases)
 
 ---
 
 ## Installation
 
 ```bash
-git clone https://github.com/kaijiang77/SAHCC.git
-cd SAHCC
+git clone https://github.com/kaijiang77/SAHCC-ready.git
+cd SAHCC-ready
 
 conda create -n sahcc python=3.12
 conda activate sahcc
@@ -192,7 +192,7 @@ python -m src.eval data=shha eval.ckpt_path=weights/shha_sah/best.ckpt
 ## Project Structure
 
 ```text
-SAHCC/
+SAHCC-ready/
 ├── configs/       Hydra configs for data, model, matcher, trainer, and experiments
 ├── scripts/       shell entry points for training, evaluation, and repository checks
 ├── src/           core implementation: data modules, models, losses, and training logic
