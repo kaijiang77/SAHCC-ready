@@ -19,7 +19,7 @@ Main results on crowd counting (MAE/RMSE). The table below includes the point-ba
 
 SHHA training log (MAE/RMSE: 46.59/75.49): [assets/logs/train.log](assets/logs/train.log)
 
-SHHA checkpoint (MAE/RMSE: 46.59/75.49): [GitHub Release](https://github.com/kaijiang77/SAHCC-ready/releases)
+SHHA checkpoint (MAE/RMSE: 46.59/75.49): [sah_shha_46.59.ckpt](https://github.com/kaijiang77/SAHCC-ready/releases/download/v1.0.0/sah_shha_46.59.ckpt)
 
 ---
 
