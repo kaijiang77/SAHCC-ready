@@ -1,0 +1,14 @@
+ckpt_path: ''
+thresholds: [0.4, 0.5, 0.6]
+primary_threshold: 0.5
+
+visualization:
+  enabled: false
+  split: test
+  output_dir: ./visualizations
+  threshold: 0.5
+  sample_ids: []
+  image_ids: []
+  all: false
+  max_images: 20
+  radius: 3

@@ -2,6 +2,7 @@ from pathlib import Path
 
 import lightning as L
 import torch
+from lightning.pytorch.trainer.states import TrainerFn
 from hydra.core.hydra_config import HydraConfig
 
 from src.models.backbone import build_backbone
@@ -87,32 +88,41 @@ class LitCrowdModel(L.LightningModule):
 
         mae_05, rmse_05 = results[0.5]
         mse_05 = rmse_05
-        if mae_05 < self.best_mae:
-            self.best_mae = mae_05
-            self.best_mse = mse_05
+        standalone_eval = getattr(self.trainer.state, 'fn', None) == TrainerFn.VALIDATING
 
         self.log('mae', mae_05, prog_bar=True)
         self.log('mse', mse_05, prog_bar=True)
-        self.log('best_mae', self.best_mae, prog_bar=True)
-        self.log('best_mse', self.best_mse)
+        if not standalone_eval:
+            if mae_05 < self.best_mae:
+                self.best_mae = mae_05
+                self.best_mse = mse_05
+            self.log('best_mae', self.best_mae, prog_bar=True)
+            self.log('best_mse', self.best_mse)
 
-        metrics = self.trainer.callback_metrics
-        loss_t = metrics.get('train/loss')
-        loss_ce_t = metrics.get('train/loss_ce')
-        loss_points_t = metrics.get('train/loss_points')
-        loss = loss_t.item() if loss_t is not None else float('nan')
-        loss_ce = loss_ce_t.item() if loss_ce_t is not None else float('nan')
-        loss_points = loss_points_t.item() if loss_points_t is not None else float('nan')
         output_dir = Path(HydraConfig.get().runtime.output_dir)
         log_path = output_dir / f'{HydraConfig.get().job.name}.log'
         with log_path.open('a', encoding='utf-8') as f:
-            f.write(
-                f'Epoch {self.current_epoch}\n'
-                f'  Train Loss: total={loss:.6f}, ce={loss_ce:.6f}, points={loss_points:.6f}\n'
-                f'  Val MAE   : {" | ".join(mae_msg)}\n'
-                f'  Val MSE   : {" | ".join(mse_msg)}\n'
-                f'  Best@0.5  : mae={self.best_mae:.2f}, mse={self.best_mse:.2f}\n\n'
-            )
+            if standalone_eval:
+                f.write(
+                    f'Evaluation\n'
+                    f'  Val MAE   : {" | ".join(mae_msg)}\n'
+                    f'  Val MSE   : {" | ".join(mse_msg)}\n\n'
+                )
+            else:
+                metrics = self.trainer.callback_metrics
+                loss_t = metrics.get('train/loss')
+                loss_ce_t = metrics.get('train/loss_ce')
+                loss_points_t = metrics.get('train/loss_points')
+                loss = loss_t.item() if loss_t is not None else float('nan')
+                loss_ce = loss_ce_t.item() if loss_ce_t is not None else float('nan')
+                loss_points = loss_points_t.item() if loss_points_t is not None else float('nan')
+                f.write(
+                    f'Epoch {self.current_epoch}\n'
+                    f'  Train Loss: total={loss:.6f}, ce={loss_ce:.6f}, points={loss_points:.6f}\n'
+                    f'  Val MAE   : {" | ".join(mae_msg)}\n'
+                    f'  Val MSE   : {" | ".join(mse_msg)}\n'
+                    f'  Best@0.5  : mae={self.best_mae:.2f}, mse={self.best_mse:.2f}\n\n'
+                )
 
     def configure_optimizers(self):
         non_backbone = [p for n, p in self.model.named_parameters() if 'backbone' not in n and p.requires_grad]

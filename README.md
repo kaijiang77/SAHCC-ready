@@ -187,6 +187,31 @@ CUDA_VISIBLE_DEVICES=0 python -m src.eval data=shha eval.ckpt_path=/path/to/chec
 python -m src.eval data=shha eval.ckpt_path=weights/shha_sah/best.ckpt
 ```
 
+### Visualization
+
+The simplest way to export visualizations is to enable the visualization option. By default, it uses the test split and visualizes all images.
+
+```bash
+python -m src.eval data=shha eval.ckpt_path=/path/to/checkpoint.ckpt \
+  eval.visualization.enabled=true
+```
+
+The shell script version is:
+
+```bash
+CKPT_PATH=/path/to/checkpoint.ckpt bash scripts/eval.sh \
+  eval.visualization.enabled=true
+```
+
+The visualization tool exports point-level results as annotation, prediction, and comparison images. You can also choose a split or selected image ids:
+
+```bash
+python -m src.eval data=shha eval.ckpt_path=/path/to/checkpoint.ckpt \
+  eval.visualization.enabled=true eval.visualization.split=train 'eval.visualization.image_ids=[1,2,3]'
+```
+
+Visualizations are saved to `visualizations/<dataset>/<split>/`.
+
 ---
 
 ## Project Structure

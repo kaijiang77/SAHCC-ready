@@ -114,6 +114,7 @@ class UnifiedCrowdDataset(Dataset):
         image = cv2.imread(str(image_path))
         if image is None:
             raise RuntimeError(f"failed to read image: {image_path}")
+        image_h, image_w = image.shape[:2]
         image = self.transform(Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)))
 
         points = ann["points"].astype(np.float32).reshape(-1, 2)
@@ -161,16 +162,16 @@ class UnifiedCrowdDataset(Dataset):
                     "mean_mnn": mnn.float(),
                     "labels": lbs.long(),
                     "image_id": torch.tensor([image_id], dtype=torch.long),
+                    "sample_id": sample_id,
+                    "image_path": str(image_path),
+                    "image_size": torch.tensor([image_w, image_h], dtype=torch.long),
                 }
             )
         return torch.tensor(images_np, dtype=torch.float32), targets
 
 
 def build_unified_datasets(cfg_data):
-    if cfg_data.name not in DATASET_PARAMS:
-        raise ValueError(f"Unsupported dataset: {cfg_data.name}")
-
-    params = DATASET_PARAMS[cfg_data.name]
+    params = DATASET_PARAMS.get(str(cfg_data.name), DatasetParams(name=str(cfg_data.name)))
     root = Path(cfg_data.root)
     train_split = cfg_data.get("train_split", params.train_split)
     configured_val_split = cfg_data.get("val_split", params.val_split)
