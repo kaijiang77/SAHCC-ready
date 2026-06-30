@@ -1,8 +1,8 @@
 cff-version: 1.2.0
-message: "If you use this code, please cite the paper and this repository. This citation file uses temporary placeholder metadata and will be updated after the camera-ready metadata is finalized."
+message: "If you use this code, please cite the paper and this repository. This citation file uses temporary project-level metadata and will be updated after the camera-ready metadata is finalized."
 title: "Local Spacing-Aware Hungarian Matching for Stable Point-Supervised Crowd Counting"
 authors:
-  - family-names: "Author Names"
+  - name: "SAHCC Authors"
 version: 1.0.0
 date-released: 2026-06-19
 repository-code: "https://github.com/kaijiang77/SAHCC"
@@ -10,6 +10,6 @@ preferred-citation:
   type: conference-paper
   title: "Local Spacing-Aware Hungarian Matching for Stable Point-Supervised Crowd Counting"
   authors:
-    - family-names: "Author Names"
+    - name: "Kai Jiang, Yiming Lin, Zurui Ao"
   conference: "European Conference on Computer Vision (ECCV)"
   year: 2026

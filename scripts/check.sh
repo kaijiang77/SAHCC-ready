@@ -17,7 +17,6 @@ python -m py_compile \
   src/modules/lit_crowd.py \
   src/modules/losses.py \
   src/modules/metrics.py \
-  scripts/generate_noisy_annotations.py \
   tools/prepare_shha.py
 
 python - <<'PY2'

@@ -2,14 +2,25 @@ from pathlib import Path
 
 import lightning as L
 import torch
-from lightning.pytorch.trainer.states import TrainerFn
 from hydra.core.hydra_config import HydraConfig
+from lightning.pytorch.trainer.states import TrainerFn
 
 from src.models.backbone import build_backbone
 from src.models.matcher import build_matcher_crowd
 from src.models.sahcc import P2PNet
 from src.modules.losses import CrowdCriterion
-from src.modules.metrics import THRESHOLDS, summarize_count_metrics, update_count_errors
+from src.modules.metrics import DEFAULT_THRESHOLDS, summarize_count_metrics, update_count_errors
+
+
+def _thresholds_from_cfg(cfg):
+    eval_cfg = cfg.get('eval', {})
+    thresholds = tuple(float(t) for t in eval_cfg.get('thresholds', DEFAULT_THRESHOLDS))
+    if not thresholds:
+        thresholds = DEFAULT_THRESHOLDS
+    primary_threshold = float(eval_cfg.get('primary_threshold', 0.5))
+    if primary_threshold not in thresholds:
+        thresholds = (*thresholds, primary_threshold)
+    return thresholds, primary_threshold
 
 
 class LitCrowdModel(L.LightningModule):
@@ -17,8 +28,20 @@ class LitCrowdModel(L.LightningModule):
         super().__init__()
         self.save_hyperparameters(ignore=['cfg'])
         self.cfg = cfg
+        self.thresholds, self.primary_threshold = _thresholds_from_cfg(cfg)
         backbone = build_backbone(cfg.model.backbone)
-        self.model = P2PNet(backbone, row=cfg.model.row, line=cfg.model.line)
+        self.model = P2PNet(
+            backbone,
+            row=cfg.model.row,
+            line=cfg.model.line,
+            num_classes=cfg.model.get('num_classes', 1),
+            head_hidden_dim=cfg.model.get('head_hidden_dim', 256),
+            decoder_c4_channels=cfg.model.get('decoder_c4_channels', 512),
+            decoder_c5_channels=cfg.model.get('decoder_c5_channels', 512),
+            decoder_out_channels=cfg.model.get('decoder_out_channels', 256),
+            anchor_pyramid_level=cfg.model.get('anchor_pyramid_level', 3),
+            offset_scale=cfg.model.get('offset_scale', 100.0),
+        )
         matcher = build_matcher_crowd(cfg.matcher)
         self.criterion = CrowdCriterion(
             matcher=matcher,
@@ -28,8 +51,8 @@ class LitCrowdModel(L.LightningModule):
         )
         self.best_mae = float('inf')
         self.best_mse = float('inf')
-        self.val_abs_err = {t: [] for t in THRESHOLDS}
-        self.val_sq_err = {t: [] for t in THRESHOLDS}
+        self.val_abs_err = {t: [] for t in self.thresholds}
+        self.val_sq_err = {t: [] for t in self.thresholds}
 
     def forward(self, samples):
         return self.model(samples)
@@ -59,8 +82,8 @@ class LitCrowdModel(L.LightningModule):
         return loss
 
     def on_validation_epoch_start(self):
-        self.val_abs_err = {t: [] for t in THRESHOLDS}
-        self.val_sq_err = {t: [] for t in THRESHOLDS}
+        self.val_abs_err = {t: [] for t in self.thresholds}
+        self.val_sq_err = {t: [] for t in self.thresholds}
 
     def validation_step(self, batch, batch_idx):
         samples, targets = batch
@@ -72,13 +95,13 @@ class LitCrowdModel(L.LightningModule):
         prob = torch.sigmoid(logits)
         gt_cnt = torch.as_tensor([t['points'].shape[0] for t in targets], device=prob.device, dtype=torch.long)
 
-        update_count_errors(self.val_abs_err, self.val_sq_err, prob, gt_cnt)
+        update_count_errors(self.val_abs_err, self.val_sq_err, prob, gt_cnt, thresholds=self.thresholds)
 
     def on_validation_epoch_end(self):
-        results = summarize_count_metrics(self.val_abs_err, self.val_sq_err)
+        results = summarize_count_metrics(self.val_abs_err, self.val_sq_err, thresholds=self.thresholds)
         mae_msg = []
         mse_msg = []
-        for thr in THRESHOLDS:
+        for thr in self.thresholds:
             mae, rmse = results[thr]
             mse = rmse
             self.log(f'val/mae@{thr}', mae)
@@ -86,16 +109,16 @@ class LitCrowdModel(L.LightningModule):
             mae_msg.append(f'@{thr}:{mae:.2f}')
             mse_msg.append(f'@{thr}:{mse:.2f}')
 
-        mae_05, rmse_05 = results[0.5]
-        mse_05 = rmse_05
+        primary_mae, primary_rmse = results[self.primary_threshold]
+        primary_mse = primary_rmse
         standalone_eval = getattr(self.trainer.state, 'fn', None) == TrainerFn.VALIDATING
 
-        self.log('mae', mae_05, prog_bar=True)
-        self.log('mse', mse_05, prog_bar=True)
+        self.log('mae', primary_mae, prog_bar=True)
+        self.log('mse', primary_mse, prog_bar=True)
         if not standalone_eval:
-            if mae_05 < self.best_mae:
-                self.best_mae = mae_05
-                self.best_mse = mse_05
+            if primary_mae < self.best_mae:
+                self.best_mae = primary_mae
+                self.best_mse = primary_mse
             self.log('best_mae', self.best_mae, prog_bar=True)
             self.log('best_mse', self.best_mse)
 
@@ -121,7 +144,7 @@ class LitCrowdModel(L.LightningModule):
                     f'  Train Loss: total={loss:.6f}, ce={loss_ce:.6f}, points={loss_points:.6f}\n'
                     f'  Val MAE   : {" | ".join(mae_msg)}\n'
                     f'  Val MSE   : {" | ".join(mse_msg)}\n'
-                    f'  Best@0.5  : mae={self.best_mae:.2f}, mse={self.best_mse:.2f}\n\n'
+                    f'  Best@{self.primary_threshold:g}  : mae={self.best_mae:.2f}, mse={self.best_mse:.2f}\n\n'
                 )
 
     def configure_optimizers(self):
